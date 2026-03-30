@@ -1,0 +1,194 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getSupabaseClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import { AuthPageShell } from '@/components/auth/auth-page-shell'
+import { ArrowRight, ShieldCheck } from 'lucide-react'
+
+const ROLES = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'salesman', label: 'Salesman' },
+  { value: 'inventory_manager', label: 'Inventory Manager' },
+  { value: 'sales_manager', label: 'Sales Manager' },
+]
+
+export default function SignupPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
+    role: '',
+  })
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({ ...prev, role: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      if (!formData.email || !formData.password || !formData.name || !formData.role) {
+        toast.error('Please fill in all fields')
+        setLoading(false)
+        return
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Passwords do not match')
+        setLoading(false)
+        return
+      }
+
+      if (formData.password.length < 6) {
+        toast.error('Password must be at least 6 characters')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: formData.name,
+          email: formData.email,
+          role: formData.role,
+          password: formData.password,
+        }),
+      })
+
+      const data = await response.json().catch(() => ({})) as { error?: string }
+
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to create account')
+        setLoading(false)
+        return
+      }
+
+      toast.success('Account created successfully! You can sign in now.')
+      router.push('/auth/login')
+    } catch (error) {
+      toast.error('An error occurred during signup')
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <AuthPageShell
+      eyebrow="Create your profile"
+      title="Set up your account"
+      footer={
+        <div className="text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href="/auth/login" className="font-medium text-foreground underline decoration-cyan-500/50 underline-offset-4 hover:text-cyan-600">
+            Sign in
+          </Link>
+        </div>
+      }
+    >
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <CardTitle className="text-2xl font-semibold tracking-tight">Create Account</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Join our inventory management system
+          </CardDescription>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground/80">Full Name</label>
+            <Input
+              name="name"
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={handleChange}
+              className="border-border/70 bg-background/80 placeholder:text-muted-foreground/60"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground/80">Email</label>
+            <Input
+              name="email"
+              type="email"
+              placeholder="john@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              className="border-border/70 bg-background/80 placeholder:text-muted-foreground/60"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground/80">Role</label>
+            <Select value={formData.role} onValueChange={handleRoleChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select your role" />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLES.map(role => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground/80">Password</label>
+            <Input
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              className="border-border/70 bg-background/80 placeholder:text-muted-foreground/60"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground/80">Confirm Password</label>
+            <Input
+              name="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="border-border/70 bg-background/80 placeholder:text-muted-foreground/60"
+              disabled={loading}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full bg-linear-to-r from-slate-950 to-slate-700 text-white shadow-lg shadow-slate-900/15"
+            disabled={loading}
+          >
+            {loading ? 'Creating Account...' : <><ShieldCheck className="mr-2 h-4 w-4" /> Create Account</>}
+          </Button>
+        </form>
+      </div>
+    </AuthPageShell>
+  )
+}

@@ -1,0 +1,1 @@
+export { default } from '../../../dashboard/salesman/create-bill/page'

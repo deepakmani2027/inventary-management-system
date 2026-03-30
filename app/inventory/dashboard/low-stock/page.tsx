@@ -1,0 +1,1 @@
+export { default } from '../../../dashboard/inventory/low-stock/page'
