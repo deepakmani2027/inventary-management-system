@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { cn } from '@/lib/utils'
 
 interface AuthPageShellProps {
@@ -61,17 +60,6 @@ export function AuthPageShell({
                   {description}
                 </p>
               )}
-            </div>
-
-            {/* Animation */}
-            <div className="flex max-w-xl items-center gap-4 rounded-3xl p-0">
-              <div className="h-56 w-56 shrink-0 sm:h-72 sm:w-72 lg:h-80 lg:w-80 xl:h-96 xl:w-96">
-                <DotLottieReact
-                  src="https://assets10.lottiefiles.com/packages/lf20_jcikwtux.json"
-                  loop
-                  autoplay
-                />
-              </div>
             </div>
 
             {/* Features */}

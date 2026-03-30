@@ -1,10 +1,8 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
-import { getSupabaseClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -40,49 +38,6 @@ const featureCards = [
 ]
 
 export default function Home() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = getSupabaseClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-
-        const role = userData?.role || 'user'
-        const roleRoutes: Record<string, string> = {
-          admin: '/admin/dashboard',
-          salesman: '/salesman/dashboard',
-          inventory_manager: '/inventory/dashboard',
-          sales_manager: '/sales-manager/dashboard',
-        }
-
-        router.push(roleRoutes[role] || '/auth/login')
-      } else {
-        setIsLoading(false)
-      }
-    }
-
-    checkAuth()
-  }, [router])
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="font-medium text-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="relative overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">

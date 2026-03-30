@@ -2,6 +2,10 @@ import { Suspense } from 'react'
 import { AuthPageShell } from '@/components/auth/auth-page-shell'
 import { AuthCallbackClient } from './callback-client'
 
+export const dynamic = 'force-dynamic'
+
+export const revalidate = 0
+
 export default function AuthCallbackPage({
   searchParams,
 }: {

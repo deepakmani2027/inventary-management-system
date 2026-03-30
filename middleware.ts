@@ -31,7 +31,11 @@ function createSupabaseMiddlewareClient(request: NextRequest, response: NextResp
         getAll() {
           return request.cookies.getAll().map(cookie => ({ name: cookie.name, value: cookie.value }))
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Array<{
+          name: string
+          value: string
+          options?: Parameters<typeof response.cookies.set>[2]
+        }>) {
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
       },
@@ -42,8 +46,16 @@ function createSupabaseMiddlewareClient(request: NextRequest, response: NextResp
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const response = NextResponse.next()
-  const supabase = createSupabaseMiddlewareClient(request, response)
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+
+  try {
+    const supabase = createSupabaseMiddlewareClient(request, response)
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch (error) {
+    console.error('Middleware auth check failed, allowing request:', error)
+    return response
+  }
 
   const isDashboardPath = pathname.startsWith('/dashboard')
   const isLegacyRolePath = ['admin', 'salesman', 'inventory-manager', 'sales-manager'].some(
@@ -59,16 +71,24 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle()
+  let profile: { role?: string } | null = null
+
+  try {
+    const supabase = createSupabaseMiddlewareClient(request, response)
+    const { data } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+    profile = data
+  } catch (error) {
+    console.error('Middleware profile lookup failed, continuing without role:', error)
+  }
 
   const role = profile?.role || null
   const roleDashboard = getDashboardRouteForRole(role)
 
-  if (pathname === '/' || pathname.startsWith('/auth')) {
+  if (pathname.startsWith('/auth')) {
     if (roleDashboard) {
       return NextResponse.redirect(new URL(roleDashboard, request.url))
     }
