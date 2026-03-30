@@ -1,8 +1,10 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
+import { Moon, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -38,6 +40,17 @@ const featureCards = [
 ]
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false)
+  const { resolvedTheme, setTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+  }
+
   return (
     <div className="relative overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">
@@ -60,6 +73,18 @@ export default function Home() {
           </Link>
 
           <nav className="flex items-center gap-3">
+            {mounted ? (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleTheme}
+                className="h-9 w-9 border-border/70 bg-background/80 text-muted-foreground backdrop-blur hover:text-foreground sm:h-10 sm:w-10"
+                aria-label="Toggle theme"
+              >
+                {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+            ) : null}
+
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
               <Link href="/auth/login">Log in</Link>
             </Button>
