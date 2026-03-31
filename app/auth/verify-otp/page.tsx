@@ -143,7 +143,17 @@ export default function VerifyOtpPage() {
 
   // ✅ GET EMAIL (IMPORTANT)
   useEffect(() => {
-    const pending = localStorage.getItem('pending_signup_email') || ''
+    // prefer email passed via URL (router redirect from signup)
+    let pending = ''
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const emailFromUrl = params.get('email')
+      if (emailFromUrl) pending = emailFromUrl
+      else pending = localStorage.getItem('pending_signup_email') || ''
+    } catch (e) {
+      pending = localStorage.getItem('pending_signup_email') || ''
+    }
+
     setEmail(pending)
     setMounted(true)
 

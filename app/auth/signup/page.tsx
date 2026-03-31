@@ -107,7 +107,7 @@ export default function SignupPage() {
       }
 
       toast.success('OTP sent — check your email and verify to complete signup')
-      router.push('/auth/verify-otp')
+      router.push(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
       toast.error('An error occurred during signup')
       console.error(error)
