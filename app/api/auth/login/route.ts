@@ -18,6 +18,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error?.message || 'Login failed' }, { status: 401 })
   }
 
+  // ensure user has completed email/OTP verification and is_active
+  const { data: profile, error: profileError } = await supabaseAdmin.from('users').select('is_active').eq('id', data.user.id).maybeSingle()
+
+  if (profileError) {
+    return NextResponse.json({ error: profileError.message || 'Unable to check account status' }, { status: 500 })
+  }
+
+  if (!profile || profile.is_active !== true) {
+    return NextResponse.json({ error: 'Account not verified. Please verify your email before logging in.' }, { status: 403 })
+  }
+
   const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(data.user.id)
   const role = authUserData.user?.user_metadata?.role || data.user.user_metadata?.role || 'user'
 

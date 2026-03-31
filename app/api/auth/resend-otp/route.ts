@@ -39,34 +39,22 @@ async function sendOtpEmail(to: string, otp: string) {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))
-  const fullName = String(body.full_name || '').trim()
   const email = String(body.email || '').trim().toLowerCase()
-  const role = String(body.role || '').trim()
-  const password = String(body.password || '')
 
-  if (!fullName || !email || !role || !password) {
-    return NextResponse.json({ error: 'Please fill in all fields' }, { status: 400 })
+  if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+
+  // find pending signup
+  const { data: pending, error: pendingError } = await supabaseAdmin
+    .from('pending_signups')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle()
+
+  if (pendingError || !pending) {
+    return NextResponse.json({ error: 'Pending signup not found', code: 'PENDING_NOT_FOUND' }, { status: 404 })
   }
 
-  // Create a pending signup record (we will create real auth user after OTP verification)
-  let pending: any = null
-  try {
-    const resp = await supabaseAdmin
-      .from('pending_signups')
-      .insert({ full_name: fullName, email, role, password })
-      .select('id')
-      .maybeSingle()
-    pending = resp.data
-    if (resp.error || !pending) {
-      console.warn('signup: failed to create pending signup', { error: resp.error })
-      return NextResponse.json({ error: 'Failed to create pending signup', code: 'PENDING_CREATE_FAILED' }, { status: 500 })
-    }
-  } catch (e) {
-    console.warn('signup: exception when creating pending signup', e)
-    return NextResponse.json({ error: 'Failed to create pending signup', code: 'PENDING_CREATE_FAILED' }, { status: 500 })
-  }
-
-  // generate OTP and store in pending_otps
+  // generate new OTP and store
   const otp = generateOTP(6)
   const expiresAt = new Date(Date.now() + 1000 * 60 * 15).toISOString()
 
@@ -78,19 +66,21 @@ export async function POST(request: Request) {
   })
 
   if (otpError) {
-    console.warn('signup: failed to insert otp', { otpError })
-    await supabaseAdmin.from('pending_signups').delete().eq('id', pending.id)
+    console.warn('resend-otp: failed to insert otp', { otpError })
     return NextResponse.json({ error: 'Failed to store OTP', code: 'OTP_STORE_FAILED' }, { status: 500 })
   }
 
   try {
     await sendOtpEmail(email, otp)
   } catch (e: any) {
-    console.warn('signup: failed to send email', { err: e })
+    console.warn('resend-otp: failed to send email', e)
     await supabaseAdmin.from('pending_otps').delete().eq('pending_signup_id', pending.id)
-    await supabaseAdmin.from('pending_signups').delete().eq('id', pending.id)
     return NextResponse.json({ error: `Failed to send verification email: ${e.message || e}`, code: 'EMAIL_SEND_FAILED' }, { status: 500 })
   }
+  // In development, log the OTP server-side for debugging (do not expose to client)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[dev] resend-otp for ${email}: ${otp}`)
+  }
 
-  return NextResponse.json({ message: 'Pending signup created. OTP sent to email' })
+  return NextResponse.json({ message: 'OTP resent' })
 }

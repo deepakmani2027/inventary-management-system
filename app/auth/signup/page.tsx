@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,7 @@ const ROLES = [
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -29,6 +31,15 @@ export default function SignupPage() {
     name: '',
     role: '',
   })
+
+  useEffect(() => {
+    try {
+      const prefill = searchParams.get('email')
+      if (prefill) setFormData(prev => ({ ...prev, email: prefill }))
+    } catch (e) {
+      // ignore
+    }
+  }, [searchParams])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -81,8 +92,21 @@ export default function SignupPage() {
         return
       }
 
-      toast.success('Account created successfully! You can sign in now.')
-      router.push('/auth/login')
+      // store pending signup email so verify page can read it
+      try {
+        localStorage.setItem('pending_signup_email', formData.email)
+        // record when OTP was sent so verify page can enforce resend cooldown
+        try {
+          localStorage.setItem('pending_signup_sent_at', String(Date.now()))
+        } catch (e) {
+          console.warn('Could not set pending_signup_sent_at', e)
+        }
+      } catch (e) {
+        console.warn('Could not set localStorage pending_signup_email', e)
+      }
+
+      toast.success('OTP sent — check your email and verify to complete signup')
+      router.push('/auth/verify-otp')
     } catch (error) {
       toast.error('An error occurred during signup')
       console.error(error)
