@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { getSupabaseClient } from '@/lib/supabase/client'
+// note: do not import server-dependent supabase client in client components
 import { toast } from 'sonner'
 import { AuthPageShell } from '@/components/auth/auth-page-shell'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
@@ -22,7 +21,6 @@ const ROLES = [
 
 export default function SignupPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -34,12 +32,15 @@ export default function SignupPage() {
 
   useEffect(() => {
     try {
-      const prefill = searchParams.get('email')
-      if (prefill) setFormData(prev => ({ ...prev, email: prefill }))
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search)
+        const prefill = params.get('email')
+        if (prefill) setFormData(prev => ({ ...prev, email: prefill }))
+      }
     } catch (e) {
       // ignore
     }
-  }, [searchParams])
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
