@@ -13,7 +13,6 @@ import { AuthPageShell } from '@/components/auth/auth-page-shell'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
 
 const ROLES = [
-  { value: 'admin', label: 'Admin' },
   { value: 'salesman', label: 'Salesman' },
   { value: 'inventory_manager', label: 'Inventory Manager' },
   { value: 'sales_manager', label: 'Sales Manager' },

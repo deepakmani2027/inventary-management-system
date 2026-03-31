@@ -89,6 +89,8 @@ export default function AdminUsersPage() {
     }
   }
 
+  const [seeAll, setSeeAll] = useState(false)
+
   const removeUser = async (id: string) => {
     if (!confirm('Delete this user?')) return
     const response = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
@@ -146,7 +148,8 @@ export default function AdminUsersPage() {
 
       <DataTable
         title="All Users"
-        pageSize={10}
+        pageSize={seeAll ? filteredUsers.length || 1 : 10}
+        hidePagination={true}
         columns={[
           { key: 'full_name', label: 'Name' },
           { key: 'email', label: 'Email' },
@@ -170,6 +173,12 @@ export default function AdminUsersPage() {
         data={filteredUsers}
         loading={loading}
       />
+
+      <div className="mt-3 flex justify-end">
+        <Button size="sm" variant="outline" onClick={() => setSeeAll(prev => !prev)} className="border-border/70">
+          {seeAll ? 'Show paged' : 'See all'}
+        </Button>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="border-border/70 bg-background/95 backdrop-blur-xl">
