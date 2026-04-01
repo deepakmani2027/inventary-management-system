@@ -79,6 +79,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: profileError.message }, { status: 500 })
   }
 
+  // Associate the mirrored email_otps row (if present) with the newly created user.
+  try {
+    const { data: preInserted, error: findError } = await supabaseAdmin
+      .from('email_otps')
+      .select('*')
+      .eq('otp_code', otp)
+      .eq('used', false)
+      .is('user_id', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (!findError && preInserted) {
+      await supabaseAdmin.from('email_otps').update({ user_id: authData.user.id, used: true }).eq('id', preInserted.id)
+    } else {
+      // Fallback: insert a used row for auditing
+      await supabaseAdmin.from('email_otps').insert({
+        user_id: authData.user.id,
+        otp_code: otp,
+        expires_at: otpRow.expires_at,
+        used: true,
+      })
+    }
+  } catch (e) {
+    console.warn('verify-otp: failed to associate email_otps row', e)
+  }
+
   // mark OTP used and cleanup pending records
   await supabaseAdmin.from('pending_otps').update({ used: true }).eq('id', otpRow.id)
   await supabaseAdmin.from('pending_signups').delete().eq('id', pending.id)

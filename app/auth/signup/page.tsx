@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CardDescription, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 // note: do not import server-dependent supabase client in client components
 import { toast } from 'sonner'
 import { AuthPageShell } from '@/components/auth/auth-page-shell'
-import { ArrowRight, ShieldCheck } from 'lucide-react'
+import { ShieldCheck } from 'lucide-react'
 
 const ROLES = [
   { value: 'salesman', label: 'Salesman' },
@@ -163,19 +163,32 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground/80">Role</label>
-            <Select value={formData.role} onValueChange={handleRoleChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select your role" />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map(role => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium text-foreground/80">Select Role</label>
+            <div role="radiogroup" aria-label="Role" className="grid gap-2">
+              {ROLES.map((r) => {
+                const selected = formData.role === r.value
+                return (
+                  <button
+                    key={r.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => handleRoleChange(r.value)}
+                    className={cn(
+                      'w-full rounded-md border p-3 flex items-center gap-3 text-left transition',
+                      selected
+                        ? 'bg-cyan-900 border-cyan-950 text-white'
+                        : 'bg-background/50 border-border/60 text-foreground'
+                    )}
+                  >
+                    <span className={cn('h-3 w-3 rounded-full shrink-0', selected ? 'bg-white' : 'bg-muted-foreground/60')} />
+                    <div>
+                      <div className="text-sm font-medium">{r.label}</div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           <div className="space-y-2">

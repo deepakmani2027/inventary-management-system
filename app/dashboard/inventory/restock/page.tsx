@@ -294,28 +294,60 @@ export default function RestockPage() {
       }
     >
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Queue Size</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight">{lowStockItems.length}</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight">{lowStockItems.length}</div>
+                <p className="mt-1 text-sm text-muted-foreground">Items awaiting replenishment</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900/5">
+                <ClipboardList className="h-5 w-5 text-foreground" />
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Out of Stock</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight text-red-600">{stats.out}</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight text-red-600">{stats.out}</div>
+                <p className="mt-1 text-sm text-red-600">Critical items</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600/10">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Current Units</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight">{stats.stock}</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight">{stats.stock}</div>
+                <p className="mt-1 text-sm text-muted-foreground">Total units across inventory</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10">
+                <Package className="h-5 w-5 text-cyan-500" />
+              </div>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Selected</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight text-cyan-600">{selectedIds.length}</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight text-cyan-600">{selectedIds.length}</div>
+                <p className="mt-1 text-sm text-muted-foreground">Rows selected for bulk actions</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10">
+                <CheckCircle2 className="h-5 w-5 text-cyan-600" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

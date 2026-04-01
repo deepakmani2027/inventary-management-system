@@ -370,39 +370,118 @@ export default function InventoryManagerInventoryPage() {
       }
     >
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Healthy</p>
-            <div className="mt-2 flex items-end justify-between gap-3">
-              <span className="text-3xl font-semibold tracking-tight text-emerald-600">{summary.healthy}</span>
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight text-emerald-600">{summary.healthy}</div>
+                <p className="mt-1 text-sm text-green-600">▲ 0% from last month</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600/10">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Low Stock</p>
-            <div className="mt-2 flex items-end justify-between gap-3">
-              <span className="text-3xl font-semibold tracking-tight text-amber-600">{summary.low}</span>
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight text-amber-600">{summary.low}</div>
+                <p className="mt-1 text-sm text-amber-600">▼ 0% from last month</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Out of Stock</p>
-            <div className="mt-2 flex items-end justify-between gap-3">
-              <span className="text-3xl font-semibold tracking-tight text-red-600">{summary.out}</span>
-              <ShieldAlert className="h-5 w-5 text-red-500" />
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight text-red-600">{summary.out}</div>
+                <p className="mt-1 text-sm text-red-600">▼ 0% from last month</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600/10">
+                <ShieldAlert className="h-5 w-5 text-red-600" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70 bg-background/75 backdrop-blur">
-          <CardContent className="p-4">
+        <Card className="rounded-2xl border-transparent bg-gradient-to-br from-white/95 to-slate-50 shadow-md">
+          <CardContent className="p-6">
             <p className="text-sm text-muted-foreground">Total Units</p>
-            <div className="mt-2 flex items-end justify-between gap-3">
-              <span className="text-3xl font-semibold tracking-tight">{summary.totalStock}</span>
-              <Package className="h-5 w-5 text-cyan-500" />
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-4xl font-semibold tracking-tight">{summary.totalStock}</div>
+                <p className="mt-1 text-sm text-muted-foreground">Overview of total units</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10">
+                <Package className="h-5 w-5 text-cyan-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-4">
+        <Card className="rounded-2xl border-transparent bg-white/60 shadow-sm">
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground">Validation Issues</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-semibold tracking-tight text-foreground">{lowStockItems.length}</div>
+                <p className="mt-1 text-sm text-red-600">▼ 0% from last month</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <FileText className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-transparent bg-white/60 shadow-sm">
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground">Valid Items</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-semibold tracking-tight text-foreground">{summary.healthy}</div>
+                <p className="mt-1 text-sm text-emerald-600">▲ 0% from last month</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-transparent bg-white/60 shadow-sm">
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground">Critical Alerts</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-semibold tracking-tight text-foreground">{summary.out}</div>
+                <p className="mt-1 text-sm text-red-600">▼ 0% from last month</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border-transparent bg-white/60 shadow-sm">
+          <CardContent className="p-6">
+            <p className="text-sm text-muted-foreground">Tracked Items</p>
+            <div className="mt-3 flex items-center justify-between">
+              <div>
+                <div className="text-3xl font-semibold tracking-tight text-foreground">{items.length}</div>
+                <p className="mt-1 text-sm text-emerald-600">▲ 0% from last month</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <RotateCcw className="h-5 w-5" />
+              </div>
             </div>
           </CardContent>
         </Card>

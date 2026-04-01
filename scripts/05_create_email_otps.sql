@@ -1,7 +1,7 @@
 -- Table to store OTPs sent to users for email verification
 CREATE TABLE IF NOT EXISTS email_otps (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   otp_code TEXT NOT NULL,
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
   used BOOLEAN DEFAULT FALSE,

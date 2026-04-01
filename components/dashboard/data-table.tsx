@@ -57,12 +57,12 @@ export function DataTable<T extends Record<string, any>>({
         <CardTitle className="tracking-tight">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
+        <div className="w-full max-h-[260px] overflow-y-auto relative">
+          <Table className="w-full">
             <TableHeader>
-              <TableRow className="border-border/70 hover:bg-transparent">
+              <TableRow className="bg-background/80 sticky top-0 z-20 border-border/70">
                 {columns.map((column, index) => (
-                  <TableHead key={`${String(column.key)}-${index}`} className="text-muted-foreground">
+                  <TableHead key={`${String(column.key)}-${index}`} className="px-4 py-3 text-left">
                     {column.label}
                   </TableHead>
                 ))}
@@ -83,12 +83,10 @@ export function DataTable<T extends Record<string, any>>({
                 </TableRow>
               ) : (
                 visibleRows.map((row, idx) => (
-                  <TableRow key={(row as any).id ?? idx} className="border-border/70 hover:bg-accent/40">
+                  <TableRow key={(row as any).id ?? idx} className="border-t border-border/70 hover:bg-accent/40">
                     {columns.map((column, index) => (
-                      <TableCell key={`${String(column.key)}-${index}`} className="text-foreground">
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
+                      <TableCell key={`${String(column.key)}-${index}`} className="px-4 py-3">
+                        {column.render ? column.render(row[column.key], row) : row[column.key]}
                       </TableCell>
                     ))}
                   </TableRow>

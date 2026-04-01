@@ -136,17 +136,6 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-medium">
-            <ShieldCheck className="h-4 w-4 text-cyan-600" /> Demo credentials
-          </div>
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p><span className="font-medium text-foreground">Admin:</span> admin@example.com / password123</p>
-            <p><span className="font-medium text-foreground">Salesman:</span> salesman@example.com / password123</p>
-            <p><span className="font-medium text-foreground">Inventory:</span> inventory@example.com / password123</p>
-            <p><span className="font-medium text-foreground">Sales Manager:</span> manager@example.com / password123</p>
-          </div>
-        </div>
       </div>
     </AuthPageShell>
   )

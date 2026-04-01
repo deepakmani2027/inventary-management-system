@@ -70,6 +70,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to store OTP', code: 'OTP_STORE_FAILED' }, { status: 500 })
   }
 
+  // Mirror the OTP into email_otps for audit/history
+  const { error: mirrorError } = await supabaseAdmin.from('email_otps').insert({
+    user_id: null,
+    otp_code: otp,
+    expires_at: expiresAt,
+    used: false,
+  })
+
+  if (mirrorError) {
+    console.warn('resend-otp: failed to mirror otp to email_otps', { mirrorError })
+    // delete the pending otp we just inserted
+    await supabaseAdmin.from('pending_otps').delete().eq('pending_signup_id', pending.id).eq('otp_code', otp)
+    return NextResponse.json({ error: 'Failed to store OTP audit', code: 'OTP_AUDIT_FAILED' }, { status: 500 })
+  }
+
   try {
     await sendOtpEmail(email, otp)
   } catch (e: any) {
