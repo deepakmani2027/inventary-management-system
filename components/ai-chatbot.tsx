@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Send, X, MessageCircle, Settings, Zap, TrendingUp, BarChart3, RefreshCw } from 'lucide-react'
 
 interface Message {
@@ -25,9 +25,9 @@ export function AIChatbot() {
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
+  }
 
   useEffect(() => {
     scrollToBottom()
@@ -43,8 +43,8 @@ export function AIChatbot() {
 
     const prompt = quickPrompts[action] || action
     setInput(prompt)
-    
-    // Use setTimeout to ensure state is updated before submission
+
+    // Submit after state updates
     setTimeout(() => {
       const form = document.querySelector('form') as HTMLFormElement
       if (form) {
@@ -67,6 +67,7 @@ export function AIChatbot() {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    const userInput = input
     setInput('')
     setIsLoading(true)
 
@@ -123,11 +124,11 @@ export function AIChatbot() {
 
                 try {
                   const parsed = JSON.parse(data)
-                  
+
                   // Extract text from the chunk
                   if (parsed.type === 'text-delta' && parsed.delta) {
                     fullContent += parsed.delta
-                    
+
                     // Update the assistant message in real-time
                     setMessages((prev) =>
                       prev.map((msg) =>
@@ -146,16 +147,6 @@ export function AIChatbot() {
         } catch (streamError) {
           console.error('[v0] Stream error:', streamError)
         }
-      } else {
-        // Fallback for non-streaming response
-        const data = await response.json()
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: data.content || 'No response generated',
-          timestamp: new Date(),
-        }
-        setMessages((prev) => [...prev, assistantMessage])
       }
     } catch (error) {
       console.error('[v0] Error sending message:', error)

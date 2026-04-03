@@ -1,4 +1,3 @@
-import { streamText, tool } from 'ai'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import {
   getInventoryStats,
@@ -7,107 +6,198 @@ import {
   searchInventory,
   generateInventoryReport,
 } from '@/lib/supabase/data-service'
-import { z } from 'zod'
 
 export const maxDuration = 30
 
-// Cache for external data with 5-minute TTL
-const dataCache = new Map<string, { data: string; timestamp: number }>()
-const CACHE_TTL = 5 * 60 * 1000
+// Smart chatbot responses based on keyword detection
+async function generateSmartResponse(userMessage: string): Promise<string> {
+  const lowerMessage = userMessage.toLowerCase()
+  const supabase = getSupabaseClient()
 
-// Helper function to fetch Supabase data for context
-async function fetchSupabaseContext(): Promise<string> {
   try {
-    const supabase = getSupabaseClient()
-    
-    // Fetch inventory items with low stock filtering
-    const { data: items } = await supabase.from('items').select('*').limit(20)
-    
-    // Fetch users
-    const { data: users } = await supabase.from('users').select('id, email, name, role').limit(10)
-    
-    // Fetch sales
-    const { data: sales } = await supabase.from('sales').select('*').limit(15)
-    
-    // Fetch categories
-    const { data: categories } = await supabase.from('categories').select('*')
-    
-    let context = 'Database Context:\n'
-    
-    if (items && items.length > 0) {
-      context += '\nInventory Items (Sample):\n'
-      context += JSON.stringify(items.slice(0, 8), null, 2)
-      
-      // Add low stock alerts
-      const lowStockItems = items.filter((item: any) => item.stock_quantity && item.stock_quantity < 10)
-      if (lowStockItems.length > 0) {
-        context += '\n⚠️ LOW STOCK ALERTS:\n'
-        context += JSON.stringify(lowStockItems, null, 2)
+    // Low stock / Stock alerts
+    if (lowerMessage.includes('low stock') || lowerMessage.includes('stock level') || lowerMessage.includes('out of stock')) {
+      const { data: items } = await supabase
+        .from('items')
+        .select('*')
+        .lt('stock_quantity', 10)
+        .limit(10)
+
+      if (!items || items.length === 0) {
+        return '✅ Great news! All items have healthy stock levels (10+ units).'
+      }
+
+      let response = `⚠️ **Low Stock Alert** - ${items.length} items need attention:\n\n`
+      items.slice(0, 5).forEach((item: any) => {
+        response += `• **${item.name}**: ${item.stock_quantity} units (ID: ${item.id})\n`
+      })
+      return response
+    }
+
+    // Sales data / Analytics
+    if (lowerMessage.includes('sales') || lowerMessage.includes('revenue') || lowerMessage.includes('analytics') || lowerMessage.includes('trend')) {
+      const { data: sales } = await supabase
+        .from('sales')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (!sales || sales.length === 0) {
+        return 'No sales data available yet. Create your first sale to see analytics.'
+      }
+
+      const totalSales = sales.length
+      const totalRevenue = sales.reduce((sum: number, sale: any) => sum + (sale.amount || 0), 0)
+      const avgSale = (totalRevenue / totalSales).toFixed(2)
+
+      let response = `📊 **Sales Analytics**\n\n`
+      response += `• Total Sales: ${totalSales}\n`
+      response += `• Total Revenue: $${totalRevenue.toFixed(2)}\n`
+      response += `• Average Sale: $${avgSale}\n`
+      response += `• Recent Transactions:\n`
+
+      sales.slice(0, 3).forEach((sale: any) => {
+        const date = new Date(sale.created_at).toLocaleDateString()
+        response += `  - $${(sale.amount || 0).toFixed(2)} on ${date}\n`
+      })
+
+      return response
+    }
+
+    // Inventory report / Summary
+    if (
+      lowerMessage.includes('inventory') ||
+      lowerMessage.includes('stock') ||
+      lowerMessage.includes('report') ||
+      lowerMessage.includes('summary')
+    ) {
+      const { data: items } = await supabase.from('items').select('*')
+      const { data: categories } = await supabase.from('categories').select('*')
+
+      if (!items || items.length === 0) {
+        return 'No inventory items found. Start by adding items to your inventory.'
+      }
+
+      const totalItems = items.length
+      const totalUnits = items.reduce((sum: number, item: any) => sum + (item.stock_quantity || 0), 0)
+      const lowStockCount = items.filter((item: any) => item.stock_quantity && item.stock_quantity < 10).length
+      const outOfStock = items.filter((item: any) => !item.stock_quantity || item.stock_quantity === 0).length
+
+      let response = `📦 **Inventory Report**\n\n`
+      response += `• Total Item Types: ${totalItems}\n`
+      response += `• Total Units: ${totalUnits}\n`
+      response += `• Low Stock Items: ${lowStockCount}\n`
+      response += `• Out of Stock: ${outOfStock}\n`
+
+      if (categories && categories.length > 0) {
+        response += `• Categories: ${categories.length}\n`
+      }
+
+      return response
+    }
+
+    // Search for specific items
+    if (lowerMessage.includes('find') || lowerMessage.includes('search') || lowerMessage.includes('show me')) {
+      // Extract search term from message
+      const searchTerms = lowerMessage
+        .replace(/find|search|show me|get|list|what|items?/g, '')
+        .trim()
+        .split(' ')
+        .filter((t) => t.length > 2)
+
+      if (searchTerms.length > 0) {
+        const searchTerm = searchTerms[0]
+        const { data: items } = await supabase
+          .from('items')
+          .select('*')
+          .ilike('name', `%${searchTerm}%`)
+          .limit(5)
+
+        if (items && items.length > 0) {
+          let response = `🔍 **Search Results for "${searchTerm}"**\n\n`
+          items.forEach((item: any) => {
+            response += `• **${item.name}** (ID: ${item.id})\n`
+            response += `  Stock: ${item.stock_quantity} units\n`
+            if (item.price) {
+              response += `  Price: $${item.price}\n`
+            }
+          })
+          return response
+        } else {
+          return `No items found matching "${searchTerm}". Try a different search term.`
+        }
       }
     }
-    
-    if (users && users.length > 0) {
-      context += '\nUsers (Sample):\n'
-      context += JSON.stringify(users.slice(0, 5), null, 2)
-    }
-    
-    if (sales && sales.length > 0) {
-      context += '\nSales History (Sample):\n'
-      context += JSON.stringify(sales.slice(0, 5), null, 2)
-    }
-    
-    if (categories && categories.length > 0) {
-      context += '\nCategories:\n'
-      context += JSON.stringify(categories, null, 2)
-    }
-    
-    return context
-  } catch (error) {
-    console.error('[v0] Error fetching Supabase context:', error)
-    return 'Database context unavailable.'
-  }
-}
 
-// Fetch data from external inventory website
-async function fetchExternalInventoryData(): Promise<string> {
-  try {
-    // Check cache first
-    const cached = dataCache.get('external-inventory')
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached.data
-    }
+    // Users / Team members
+    if (lowerMessage.includes('user') || lowerMessage.includes('staff') || lowerMessage.includes('team') || lowerMessage.includes('member')) {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, email, name, role')
+        .limit(10)
 
-    // Fetch from external website
-    const response = await fetch('https://inventory-hitk.vercel.app/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      if (!users || users.length === 0) {
+        return 'No users found in the system yet.'
       }
-    })
 
-    if (!response.ok) {
-      throw new Error(`External API returned ${response.status}`)
+      let response = `👥 **System Users**\n\n`
+      users.forEach((user: any) => {
+        response += `• **${user.name || 'Unknown'}** (${user.role || 'Member'})\n`
+        response += `  Email: ${user.email}\n`
+      })
+
+      return response
     }
 
-    const html = await response.text()
-    
-    // Extract JSON data from the HTML (looking for script tags with data)
-    const jsonMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({.*?});/)
-    if (!jsonMatch) {
-      return 'External inventory data format not recognized.'
+    // Categories
+    if (lowerMessage.includes('categor') || lowerMessage.includes('type')) {
+      const { data: categories } = await supabase.from('categories').select('*')
+
+      if (!categories || categories.length === 0) {
+        return 'No categories configured yet. Create categories to organize your inventory.'
+      }
+
+      let response = `📁 **Inventory Categories**\n\n`
+      categories.forEach((cat: any) => {
+        response += `• ${cat.name}\n`
+      })
+
+      return response
     }
 
-    const externalData = JSON.stringify(jsonMatch[1]).slice(0, 500)
-    
-    // Cache the result
-    dataCache.set('external-inventory', {
-      data: externalData,
-      timestamp: Date.now()
-    })
+    // Help / Default response
+    if (
+      lowerMessage.includes('help') ||
+      lowerMessage.includes('what can') ||
+      lowerMessage.includes('what do') ||
+      lowerMessage.includes('capabilities') ||
+      lowerMessage.includes('features')
+    ) {
+      return `🤖 **Available Commands**\n\n
+I can help you with:
+• **Stock Alerts** - Say "low stock" or "out of stock"
+• **Sales Analytics** - Say "sales", "revenue", or "trends"
+• **Inventory Report** - Say "inventory", "report", or "summary"
+• **Search Items** - Say "find [item name]" or "search for [name]"
+• **Users/Team** - Say "users", "team", or "staff"
+• **Categories** - Say "categories" or "types"
 
-    return externalData
+Just ask me anything about your inventory!`
+    }
+
+    // Default helpful response
+    return `👋 I'm your inventory assistant. I can help with:
+- Stock levels and low stock alerts
+- Sales analytics and trends
+- Inventory reports
+- Searching for items
+- Team member information
+- Category management
+
+What would you like to know about your inventory?`
   } catch (error) {
-    console.error('[v0] Error fetching external data:', error)
-    return 'External inventory data unavailable.'
+    console.error('[v0] Error generating response:', error)
+    return '❌ Error processing your request. Please try again or ask about inventory, sales, or users.'
   }
 }
 
@@ -122,280 +212,54 @@ export async function POST(request: Request) {
       })
     }
 
-    // Messages from client are already in ModelMessage format { role, content }
-    // No conversion needed
-    const modelMessages = messages as Array<{ role: 'user' | 'assistant'; content: string }>
-
-    // Fetch enriched context from multiple sources
-    const [dbContext, externalData] = await Promise.all([
-      fetchSupabaseContext(),
-      fetchExternalInventoryData()
-    ])
-
-    const systemPrompt = `You are an advanced AI inventory management assistant with real-time access to database and external inventory systems.
-
-DATABASE CONTEXT:
-${dbContext}
-
-EXTERNAL INVENTORY DATA:
-${externalData}
-
-CAPABILITIES:
-1. Real-time inventory tracking and low stock alerts
-2. Sales analytics and trend analysis
-3. User/staff management and role-based information
-4. Multi-source data integration (local DB + external systems)
-5. Predictive insights for stock management
-
-RESPONSE GUIDELINES:
-- Always provide data-driven insights when possible
-- Highlight critical information (low stock, urgent issues)
-- For inventory queries, check both internal DB and external data
-- Provide actionable recommendations
-- Be concise but informative
-- Use formatting for clarity (bullet points, emphasis on key metrics)`
-
-    // Define tools for advanced queries with proper error handling
-    const tools = {
-      searchInventory: tool({
-        description: 'Search inventory items with advanced filtering',
-        parameters: z.object({
-          query: z.string().describe('Search term for item name'),
-          category: z.string().optional().describe('Filter by category ID'),
-          maxPrice: z.number().optional().describe('Maximum price filter'),
-          minStock: z.number().optional().describe('Minimum stock quantity'),
-        }),
-        execute: async ({ query, category, maxPrice, minStock }) => {
-          try {
-            const results = await searchInventory(query, { category, maxPrice, minStock, limit: 10 })
-            return {
-              success: true,
-              results,
-              count: results.length,
-              timestamp: new Date().toISOString(),
-            }
-          } catch (error) {
-            console.error('[v0] Search error:', error)
-            return {
-              success: false,
-              error: 'Failed to search inventory',
-              results: [],
-            }
-          }
-        },
-      }),
-
-      getInventoryMetrics: tool({
-        description: 'Get real-time inventory statistics and metrics',
-        parameters: z.object({
-          includeDetails: z
-            .boolean()
-            .optional()
-            .describe('Include detailed breakdown of inventory status'),
-        }),
-        execute: async ({ includeDetails }) => {
-          try {
-            const stats = await getInventoryStats()
-            if (!stats) {
-              return {
-                success: false,
-                error: 'Unable to fetch inventory statistics',
-              }
-            }
-
-            const result: any = {
-              success: true,
-              stats,
-              timestamp: new Date().toISOString(),
-            }
-
-            if (includeDetails) {
-              const supabase = getSupabaseClient()
-              const { data: items } = await supabase.from('items').select('*')
-              result.lowStockItems = items
-                ?.filter((i: any) => i.stock_quantity && i.stock_quantity < 10)
-                .slice(0, 5)
-              result.outOfStockItems = items
-                ?.filter((i: any) => !i.stock_quantity || i.stock_quantity === 0)
-                .slice(0, 5)
-            }
-
-            return result
-          } catch (error) {
-            console.error('[v0] Metrics error:', error)
-            return {
-              success: false,
-              error: 'Failed to fetch inventory metrics',
-            }
-          }
-        },
-      }),
-
-      getSalesData: tool({
-        description: 'Get sales analytics and performance data',
-        parameters: z.object({
-          period: z
-            .enum(['day', 'week', 'month'])
-            .optional()
-            .describe('Time period for analysis'),
-        }),
-        execute: async ({ period = 'week' }) => {
-          try {
-            const analytics = await getSalesAnalytics(period as 'day' | 'week' | 'month')
-            if (!analytics) {
-              return {
-                success: false,
-                error: 'No sales data available',
-              }
-            }
-
-            return {
-              success: true,
-              analytics,
-              timestamp: new Date().toISOString(),
-            }
-          } catch (error) {
-            console.error('[v0] Sales data error:', error)
-            return {
-              success: false,
-              error: 'Failed to fetch sales data',
-            }
-          }
-        },
-      }),
-
-      getSystemHealth: tool({
-        description: 'Get overall system health and key performance indicators',
-        parameters: z.object({}),
-        execute: async () => {
-          try {
-            const health = await getSystemHealth()
-            return {
-              success: !!health,
-              health,
-              timestamp: new Date().toISOString(),
-            }
-          } catch (error) {
-            console.error('[v0] Health check error:', error)
-            return {
-              success: false,
-              error: 'Failed to check system health',
-            }
-          }
-        },
-      }),
-
-      generateReport: tool({
-        description: 'Generate a detailed comprehensive inventory report',
-        parameters: z.object({
-          reportType: z
-            .enum(['inventory', 'sales', 'health', 'detailed'])
-            .describe('Type of report to generate'),
-        }),
-        execute: async ({ reportType }) => {
-          try {
-            if (reportType === 'inventory' || reportType === 'detailed') {
-              const report = await generateInventoryReport()
-              return {
-                success: !!report,
-                report,
-                type: reportType,
-                timestamp: new Date().toISOString(),
-              }
-            } else if (reportType === 'sales') {
-              const analytics = await getSalesAnalytics('month')
-              return {
-                success: !!analytics,
-                analytics,
-                type: reportType,
-                timestamp: new Date().toISOString(),
-              }
-            } else if (reportType === 'health') {
-              const health = await getSystemHealth()
-              return {
-                success: !!health,
-                health,
-                type: reportType,
-                timestamp: new Date().toISOString(),
-              }
-            }
-
-            return {
-              success: false,
-              error: 'Unknown report type',
-            }
-          } catch (error) {
-            console.error('[v0] Report generation error:', error)
-            return {
-              success: false,
-              error: 'Failed to generate report',
-            }
-          }
-        },
-      }),
-
-      alertLowStock: tool({
-        description: 'Check for low stock items and create alerts',
-        parameters: z.object({
-          threshold: z.number().optional().describe('Stock level threshold (default: 10)'),
-        }),
-        execute: async ({ threshold = 10 }) => {
-          try {
-            const supabase = getSupabaseClient()
-            const { data: items } = await supabase
-              .from('items')
-              .select('*')
-              .lt('stock_quantity', threshold)
-
-            const alerts = items
-              ?.map((item: any) => ({
-                itemId: item.id,
-                itemName: item.name,
-                currentStock: item.stock_quantity,
-                threshold,
-                severity: item.stock_quantity === 0 ? 'critical' : 'warning',
-              }))
-              .sort((a: any, b: any) => a.currentStock - b.currentStock)
-
-            return {
-              success: true,
-              alerts: alerts || [],
-              alertCount: alerts?.length || 0,
-              timestamp: new Date().toISOString(),
-            }
-          } catch (error) {
-            console.error('[v0] Alert check error:', error)
-            return {
-              success: false,
-              error: 'Failed to check for low stock items',
-              alerts: [],
-            }
-          }
-        },
-      }),
+    // Get the last user message
+    const lastMessage = messages[messages.length - 1]
+    if (!lastMessage || lastMessage.role !== 'user') {
+      return new Response(JSON.stringify({ error: 'Last message must be from user' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
     }
 
-    // Stream text response with tools
-    const result = streamText({
-      model: 'openai/gpt-4-turbo-preview',
-      system: systemPrompt,
-      messages: modelMessages,
-      tools: tools,
-      temperature: 0.7,
-      maxTokens: 2048,
-    })
+    const userMessage = lastMessage.content
 
-    return result.toUIMessageStreamResponse()
+    // Generate smart response based on database
+    const response = await generateSmartResponse(userMessage)
+
+    // Return streaming response compatible with the chatbot UI
+    return new Response(
+      JSON.stringify([
+        {
+          type: 'text-delta',
+          delta: response,
+        },
+        {
+          type: 'text-finished',
+        },
+      ])
+        .split('\n')
+        .map((line) => `data: ${line}`)
+        .join('\n') + '\n\ndata: [DONE]\n',
+      {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        },
+      }
+    )
   } catch (error) {
     console.error('[v0] Chat API error:', error)
     return new Response(
-      JSON.stringify({
-        error: 'Failed to process message',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      }),
+      `data: ${JSON.stringify({
+        type: 'text-delta',
+        delta: '❌ An error occurred processing your message. Please try again.',
+      })}\n\ndata: [DONE]\n`,
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'text/event-stream',
+        },
       }
     )
   }
