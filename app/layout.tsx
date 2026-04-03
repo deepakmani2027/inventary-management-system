@@ -3,6 +3,7 @@ import { Manrope, Space_Grotesk } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AIChatbot } from '@/components/ai-chatbot'
 import './globals.css'
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-body' })
@@ -49,6 +50,7 @@ export default function RootLayout({
       <body className={`${manrope.variable} ${spaceGrotesk.variable} min-h-screen font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
+          <AIChatbot />
           <Toaster richColors position="top-right" />
         </ThemeProvider>
         <Analytics />
