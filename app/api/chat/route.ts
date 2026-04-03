@@ -1,19 +1,23 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import OpenAI from 'openai'
-import { getSupabaseClient } from '@/lib/supabase/client'
+import { generateText } from 'ai'
+import { createClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '')
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null
 
 // Helper function to fetch Supabase data for context
 async function fetchSupabaseContext(query: string): Promise<string> {
+  if (!supabase) {
+    return 'Database context unavailable (Supabase not configured).'
+  }
+
   try {
-    const supabase = getSupabaseClient()
-    
     // Fetch inventory items
     const { data: items } = await supabase.from('items').select('*').limit(10)
     
@@ -96,52 +100,36 @@ Always provide clear, concise answers. When relevant, provide data-driven insigh
       content: msg.content,
     }))
 
-    // Route to selected model
-    if (model === 'openai') {
-      // Use OpenAI
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...formattedMessages,
-        ],
+    // Select model based on user choice
+    const selectedModel = model === 'openai' ? 'openai/gpt-4-turbo' : 'google/gemini-2.0-flash'
+
+    try {
+      // Use Vercel AI SDK with the selected model
+      const { text } = await generateText({
+        model: selectedModel,
+        system: systemPrompt,
+        messages: formattedMessages,
         temperature: 0.7,
-        max_tokens: 1024,
-        stream: false,
+        maxTokens: 1024,
       })
-
-      return new Response(
-        JSON.stringify({
-          content: response.choices[0]?.message?.content || 'No response generated',
-        }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-    } else {
-      // Use Gemini (default)
-      const model_instance = genAI.getGenerativeModel({ model: 'gemini-pro' })
-      
-      const conversationHistory = formattedMessages.map((msg: any) => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }],
-      }))
-
-      const chat = model_instance.startChat({
-        history: conversationHistory.slice(0, -1), // Exclude the last user message
-      })
-
-      const result = await chat.sendMessage(
-        `${systemPrompt}\n\nUser: ${lastMessage}`
-      )
-      const response = await result.response
-      const text = response.text()
 
       return new Response(
         JSON.stringify({
           content: text,
         }),
         {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    } catch (aiError) {
+      console.error('AI generation error:', aiError)
+      // Fallback to a simple response if API fails
+      return new Response(
+        JSON.stringify({
+          content: 'I apologize, but I encountered an issue processing your request. Please ensure your API keys are properly configured.',
+        }),
+        {
+          status: 500,
           headers: { 'Content-Type': 'application/json' },
         }
       )
