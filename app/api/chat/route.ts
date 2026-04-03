@@ -227,40 +227,32 @@ export async function POST(request: Request) {
     const response = await generateSmartResponse(userMessage)
 
     // Return streaming response compatible with the chatbot UI
-    return new Response(
-      JSON.stringify([
-        {
-          type: 'text-delta',
-          delta: response,
-        },
-        {
-          type: 'text-finished',
-        },
-      ])
-        .split('\n')
-        .map((line) => `data: ${line}`)
-        .join('\n') + '\n\ndata: [DONE]\n',
-      {
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-        },
-      }
-    )
+    const sseResponse = `data: ${JSON.stringify({
+      type: 'text-delta',
+      delta: response,
+    })}\n\ndata: ${JSON.stringify({
+      type: 'text-finished',
+    })}\n\ndata: [DONE]\n`
+
+    return new Response(sseResponse, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    })
   } catch (error) {
     console.error('[v0] Chat API error:', error)
-    return new Response(
-      `data: ${JSON.stringify({
-        type: 'text-delta',
-        delta: '❌ An error occurred processing your message. Please try again.',
-      })}\n\ndata: [DONE]\n`,
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'text/event-stream',
-        },
-      }
-    )
+    const errorSse = `data: ${JSON.stringify({
+      type: 'text-delta',
+      delta: '❌ An error occurred processing your message. Please try again.',
+    })}\n\ndata: [DONE]\n`
+    
+    return new Response(errorSse, {
+      status: 500,
+      headers: {
+        'Content-Type': 'text/event-stream',
+      },
+    })
   }
 }
