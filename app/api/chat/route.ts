@@ -1,13 +1,18 @@
-import { getSupabaseClient } from '@/lib/supabase/client'
-import {
-  getInventoryStats,
-  getSalesAnalytics,
-  getSystemHealth,
-  searchInventory,
-  generateInventoryReport,
-} from '@/lib/supabase/data-service'
+import { createClient } from '@supabase/supabase-js'
 
 export const maxDuration = 30
+
+// Create server-side Supabase client
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  
+  if (!url || !key) {
+    throw new Error('Missing Supabase environment variables')
+  }
+  
+  return createClient(url, key)
+}
 
 // Smart chatbot responses based on keyword detection
 async function generateSmartResponse(userMessage: string): Promise<string> {

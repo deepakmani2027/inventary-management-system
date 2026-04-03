@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, X, MessageCircle, Settings, Zap, TrendingUp, BarChart3, RefreshCw } from 'lucide-react'
+import { Send, X, MessageCircle, Settings, Loader2 } from 'lucide-react'
 
 interface Message {
   id: string
@@ -17,7 +17,7 @@ export function AIChatbot() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I am your AI inventory assistant. Ask me about low stock items, sales trends, or inventory reports.',
+      content: 'Hi! I\'m your inventory assistant. Ask me anything about your stock, sales, users, or inventory data.',
       timestamp: new Date(),
     },
   ])
@@ -28,14 +28,6 @@ export function AIChatbot() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  const handleQuickAction = (prompt: string) => {
-    setInput(prompt)
-    setTimeout(() => {
-      const form = document.querySelector('form') as HTMLFormElement
-      if (form) form.dispatchEvent(new Event('submit', { bubbles: true }))
-    }, 0)
-  }
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -78,7 +70,7 @@ export function AIChatbot() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to fetch')
+        throw new Error(`API error: ${response.status}`)
       }
 
       if (!response.body) {
@@ -101,6 +93,7 @@ export function AIChatbot() {
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim()
             if (data === '[DONE]') continue
+            if (!data) continue
 
             try {
               const parsed = JSON.parse(data)
@@ -119,17 +112,29 @@ export function AIChatbot() {
         }
       }
     } catch (error) {
-      console.error('Error:', error)
+      console.error('[v0] Error:', error)
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantId
-            ? { ...msg, content: 'Error fetching response. Please try again.' }
+            ? { ...msg, content: 'Error: Could not fetch response. Please try again.' }
             : msg
         )
       )
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: '1',
+        role: 'assistant',
+        content: 'Hi! I\'m your inventory assistant. Ask me anything about your stock, sales, users, or inventory data.',
+        timestamp: new Date(),
+      },
+    ])
+    setShowSettings(false)
   }
 
   return (
@@ -145,14 +150,11 @@ export function AIChatbot() {
       )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-96 h-[650px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 text-white px-6 py-4 flex items-center justify-between">
+        <div className="fixed bottom-6 right-6 z-50 w-96 h-[600px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-4 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Zap size={18} />
-                AI Assistant
-              </h2>
-              <p className="text-xs text-blue-100 mt-1">Real-time inventory insights</p>
+              <h2 className="text-lg font-semibold">Inventory Assistant</h2>
+              <p className="text-xs text-blue-100">Powered by your database</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -169,41 +171,18 @@ export function AIChatbot() {
 
           {showSettings && (
             <div className="bg-blue-50 dark:bg-slate-800 border-b border-blue-200 dark:border-slate-700 px-6 py-4">
-              <div className="space-y-2 text-sm">
-                <button
-                  onClick={() => handleQuickAction('Show me all items with low stock levels')}
-                  className="w-full px-3 py-2 text-left bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition"
-                >
-                  <Zap size={14} className="inline mr-2" /> Low Stock
-                </button>
-                <button
-                  onClick={() => handleQuickAction('What are the recent sales trends?')}
-                  className="w-full px-3 py-2 text-left bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition"
-                >
-                  <TrendingUp size={14} className="inline mr-2" /> Sales
-                </button>
-                <button
-                  onClick={() => handleQuickAction('Generate an inventory report')}
-                  className="w-full px-3 py-2 text-left bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition"
-                >
-                  <BarChart3 size={14} className="inline mr-2" /> Report
-                </button>
-                <button
-                  onClick={() => handleQuickAction('List all users in the system')}
-                  className="w-full px-3 py-2 text-left bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition"
-                >
-                  <RefreshCw size={14} className="inline mr-2" /> Users
-                </button>
-              </div>
+              <button
+                onClick={handleClearChat}
+                className="w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition font-medium"
+              >
+                Clear Chat History
+              </button>
             </div>
           )}
 
           <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 px-6 py-4 space-y-3">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+              <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-xs px-4 py-2 rounded-lg ${
                     message.role === 'user'
@@ -227,27 +206,21 @@ export function AIChatbot() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-slate-800 px-4 py-3 rounded-lg rounded-bl-none">
-                  <div className="flex gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  </div>
+                <div className="bg-gray-100 dark:bg-slate-800 px-4 py-3 rounded-lg rounded-bl-none flex items-center gap-2">
+                  <Loader2 size={16} className="animate-spin text-blue-600" />
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Thinking...</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <form
-            onSubmit={handleSendMessage}
-            className="border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-6 py-4 flex gap-2"
-          >
+          <form onSubmit={handleSendMessage} className="border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-6 py-4 flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="Ask about inventory, sales, users..."
               disabled={isLoading}
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:text-white disabled:opacity-50 text-sm"
             />
