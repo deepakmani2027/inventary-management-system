@@ -1,4 +1,4 @@
-import { streamText, tool, convertToModelMessages } from 'ai'
+import { streamText, tool } from 'ai'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import {
   getInventoryStats,
@@ -115,15 +115,16 @@ export async function POST(request: Request) {
   try {
     const { messages } = await request.json()
 
-    if (!messages || !Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: 'Invalid or empty messages' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
-    // Convert client messages to model format if needed
-    const modelMessages = await convertToModelMessages(messages)
+    // Messages from client are already in ModelMessage format { role, content }
+    // No conversion needed
+    const modelMessages = messages as Array<{ role: 'user' | 'assistant'; content: string }>
 
     // Fetch enriched context from multiple sources
     const [dbContext, externalData] = await Promise.all([

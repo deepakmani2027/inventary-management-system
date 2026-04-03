@@ -67,7 +67,6 @@ export function AIChatbot() {
     }
 
     setMessages((prev) => [...prev, userMessage])
-    const userInput = input
     setInput('')
     setIsLoading(true)
 
