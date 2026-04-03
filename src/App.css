@@ -1,0 +1,139 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Manrope:wght@400;500;700;800&family=Inter:wght@600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: #0f0f0f;
+  color: #ffffff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Manrope', sans-serif;
+}
+
+.App {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Chat Widget Styles */
+.typing-dot {
+  animation: typing 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    opacity: 0.5;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+}
+
+/* Scrollbar Styling */
+.chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 47, 167, 0.3) transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 47, 167, 0.3);
+  border-radius: 3px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 47, 167, 0.5);
+}
+
+/* Quick Actions Scroll */
+.quick-actions-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 200, 200, 0.2) transparent;
+}
+
+.quick-actions-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.quick-actions-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.quick-actions-scroll::-webkit-scrollbar-thumb {
+  background: rgba(200, 200, 200, 0.2);
+  border-radius: 2px;
+}
+
+.quick-actions-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(200, 200, 200, 0.4);
+}
+
+/* Font Classes */
+.font-ibm-plex {
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.font-manrope {
+  font-family: 'Manrope', sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Message Bubble Styles */
+.bot-message {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.bot-message strong {
+  font-weight: 600;
+  color: #002FA7;
+}
+
+.bot-message code {
+  background: rgba(0, 47, 167, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #002FA7;
+}
+
+/* Smooth Transitions */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .chat-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+}

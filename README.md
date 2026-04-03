@@ -1,37 +1,181 @@
-# v0-inventory-management-app-yy
+# InventoryPro AI Chatbot
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+A comprehensive AI-powered chatbot system for inventory management, built with React, FastAPI, and integrated with Emergent AI for intelligent responses.
 
-## Built with v0
+## Architecture Overview
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+### Frontend (React)
+- **ChatWidget**: Floating chat interface with smooth animations
+- **LandingPage**: Engaging product landing page
+- **Framework**: React 19.0 with Framer Motion for animations
+- **Styling**: Tailwind CSS with custom theme
+- **State Management**: Local state with axios for API calls
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_qvLnIfAZfbZVYspNBTfZAyvy7BGj)
+### Backend (FastAPI)
+- **Framework**: FastAPI with async support
+- **Database**: MongoDB for chat history via Motor ORM
+- **Data Integration**: Supabase REST API for inventory data
+- **LLM Integration**: Emergent AI Gateway supporting OpenAI and Gemini
+- **Features**: Intent detection, context-aware responses, session management
 
-## Getting Started
+## Key Features
 
-First, run the development server:
+✨ **Multi-Model Support**: Switch between OpenAI GPT-4.1 Mini and Gemini 2.5 Flash
+📊 **Real-time Data**: Live inventory, sales, and revenue insights
+👥 **Team Management**: Access team members and roles
+⚡ **Smart Intent Detection**: Automatically fetches relevant data based on queries
+💾 **Session Persistence**: Conversation history saved in MongoDB
+🎨 **Beautiful UI**: Modern, responsive design with animations
+
+## Quick Start
+
+### Prerequisites
+- Node.js 16+ and npm/yarn
+- Python 3.9+
+- MongoDB instance
+- Supabase account with inventory database
+- Emergent AI API key
+
+### Frontend Setup
 
 ```bash
-npm run dev
+# Install dependencies
+npm install
 # or
-yarn dev
+yarn install
+
+# Start development server
+npm start
 # or
-pnpm dev
+yarn start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The frontend runs on `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Backend Setup
 
-## Learn More
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-To learn more, take a look at the following resources:
+# Install dependencies
+pip install -r requirements.txt
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+# Create .env file with configuration
+cp .env.example .env
+# Edit .env with your credentials
 
-<a href="https://v0.app/chat/api/kiro/clone/deepakmani2027/v0-inventory-management-app-yy" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+# Run server
+uvicorn server:app --reload --port 8000
+```
 
-# inventary-management-system
+The backend runs on `http://localhost:8000`
+
+## Environment Variables
+
+### Frontend
+- `REACT_APP_BACKEND_URL`: Backend server URL (default: http://localhost:8000)
+
+### Backend
+- `MONGO_URL`: MongoDB connection string
+- `DB_NAME`: Database name (default: inventory_pro)
+- `SUPABASE_URL`: Supabase project URL
+- `SUPABASE_KEY`: Supabase API key
+- `EMERGENT_LLM_KEY`: Emergent AI API key
+- `CORS_ORIGINS`: Allowed CORS origins (comma-separated)
+
+## API Endpoints
+
+### Chat
+- `POST /api/chat` - Send message and get AI response
+  - Body: `{ message, session_id, model }`
+  - Returns: `{ response, session_id, model_used, data_context }`
+
+### History
+- `GET /api/chat/history/{session_id}` - Get conversation history
+  - Returns: `{ session_id, messages: [{ role, content, timestamp }] }`
+
+### Data
+- `GET /api/data/summary` - Get inventory summary statistics
+- `GET /api/data/items` - Get all items with stock information
+
+## Component Structure
+
+```
+src/
+├── App.js                 # Main app routing
+├── App.css                # Global styles
+├── index.js               # Entry point
+├── components/
+│   ├── ChatWidget.jsx     # Chat widget component
+│   └── LandingPage.jsx    # Landing page
+└── index.css              # Tailwind & CSS variables
+```
+
+## Data Context
+
+The chatbot has access to comprehensive inventory data:
+- **Summary**: Total items, stock units, sales, revenue, active users
+- **Categories**: Product categories
+- **Items**: Products with pricing and stock levels
+- **Sales**: Recent transactions and sales data
+- **Inventory**: Warehouse locations and stock quantities
+- **Alerts**: Low stock warnings
+- **Team**: User information and roles
+
+## Customization
+
+### Styling
+Edit `src/index.css` to customize Tailwind CSS design tokens and colors.
+
+### Quick Actions
+Edit the `QUICK_ACTIONS` array in `ChatWidget.jsx` to customize suggested queries.
+
+### System Prompt
+Modify the `SYSTEM_PROMPT` in `server.py` to change the assistant's personality and behavior.
+
+### Models
+Change default models in the backend config or toggle via UI.
+
+## Deployment
+
+### Frontend
+```bash
+npm run build
+# Deploy build/ folder to Vercel, Netlify, or similar
+```
+
+### Backend
+```bash
+# Deploy to Heroku, Railway, or similar with Python support
+# Ensure environment variables are set in deployment platform
+```
+
+## Troubleshooting
+
+### Chat Widget doesn't appear
+- Check that backend URL is correct in `.env.local`
+- Verify backend server is running
+- Check browser console for errors
+
+### No responses from AI
+- Verify Emergent API key is set correctly
+- Check MongoDB connection
+- Ensure Supabase credentials are valid
+
+### Data not showing
+- Verify Supabase tables exist (items, categories, inventory, sales, users)
+- Check Supabase API key permissions
+- Review backend logs for data fetching errors
+
+## Technologies Used
+
+- **Frontend**: React 19, Framer Motion, Tailwind CSS, Lucide Icons, Axios
+- **Backend**: FastAPI, Motor (MongoDB), Pydantic, Starlette
+- **AI**: Emergent AI Gateway, OpenAI, Google Gemini
+- **Database**: MongoDB, Supabase
+
+## License
+
+Built with ❤️ by the Emergent team. Part of the InventoryPro platform.
